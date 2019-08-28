@@ -3,12 +3,15 @@ from ebooks.models import Ebook, Review
 
 class ReviewSerializer(serializers.ModelSerializer):
 
+    autor_review = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model = Review
         # fields = "__all__"
         exclude = ('ebook',)
 
 class EbookSerializer(serializers.ModelSerializer):
+    reviews = ReviewSerializer(many=True, read_only=True)
 
     class Meta:
         model = Ebook

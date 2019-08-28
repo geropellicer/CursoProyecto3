@@ -2,10 +2,11 @@ from rest_framework import generics
 from rest_framework import mixins
 from rest_framework.generics import get_object_or_404
 from rest_framework import permissions
+from rest_framework.exceptions import ValidationError
 
 from ebooks.models import Ebook, Review
 from ebooks.api.serializers import EbookSerializer, ReviewSerializer
-from ebooks.api.permissions import IsAdminUserOrReadOnly
+from ebooks.api.permissions import IsAdminUserOrReadOnly, IsReviewAuthorOrReadOnly
 
 
 
@@ -27,12 +28,20 @@ class ReviewCreateAPIView(generics.CreateAPIView):
     def perform_create(self, serializer):
         ebook_pk = self.kwargs.get("ebook_pk")
         ebook = get_object_or_404(Ebook, pk=ebook_pk)
-        serializer.save(ebook=ebook)
+
+        autor_review = self.request.user
+
+        review_queryset = Review.objects.filter(ebook=ebook,
+                                                autor_review=autor_review)
+        if review_queryset.exists():
+            raise ValidationError("Ya has creado una review!")
+
+        serializer.save(ebook=ebook, autor_review=autor_review )
 
 class ReviewDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsReviewAuthorOrReadOnly]
 
 
 # class EbookListCreateAPIView(mixins.ListModelMixin,
